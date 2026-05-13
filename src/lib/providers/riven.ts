@@ -233,7 +233,7 @@ export interface paths {
          * Get Stats
          * @description Produce aggregated statistics for the media library and its items.
          *
-         *     The response includes total counts for media items, movies, shows, seasons, and episodes; the total number of filesystem symlinks (determined by existence of FilesystemEntry records linked to movie or episode items); a mapping of each state to its item count; the number of incomplete items; and a mapping of incomplete item IDs to their scraped attempt counts.
+         *     The response includes total counts for media items, movies, shows, seasons, and episodes; the total number of items with a filesystem/media entry record; a mapping of each state to its item count; the number of incomplete items; and a mapping of incomplete item IDs to their scraped attempt counts.
          *
          *     Returns:
          *         StatsResponse: Aggregated statistics with keys `total_items`, `total_movies`, `total_shows`, `total_seasons`, `total_episodes`, `total_symlinks`, `incomplete_items`, `incomplete_retries`, and `states`.
@@ -281,26 +281,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/mount": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Mount Files
-         * @description Get all files in the Riven VFS mount.
-         */
-        get: operations["mount"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/upload_logs": {
         parameters: {
             query?: never;
@@ -333,26 +313,6 @@ export interface paths {
          * @description Fetch the calendar of all the items in the library
          */
         get: operations["fetch_calendar"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/vfs_stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get VFS Statistics
-         * @description Get statistics about the VFS
-         */
-        get: operations["get_vfs_stats"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1227,10 +1187,10 @@ export interface components {
              * @default false
              */
             tracemalloc: boolean;
-            /** @description Filesystem configuration */
-            filesystem?: components["schemas"]["FilesystemModel"];
-            /** @description Library updaters configuration */
-            updaters?: components["schemas"]["UpdatersModel"];
+            /** @description Library naming templates, optional profiles, and stream disk cache */
+            library?: components["schemas"]["LibrarySettingsModel"];
+            /** @description Plex server API configuration */
+            plex?: components["schemas"]["PlexLibraryModel"];
             /** @description Downloader services configuration */
             downloaders?: components["schemas"]["DownloadersModel"];
             /** @description Content services configuration */
@@ -1607,27 +1567,6 @@ export interface components {
             /** @description AllDebrid downloader configuration */
             all_debrid?: components["schemas"]["AllDebridModel"];
         };
-        /** EmbyLibraryModel */
-        EmbyLibraryModel: {
-            /**
-             * Enabled
-             * @description Enable Emby library updates
-             * @default false
-             */
-            enabled: boolean;
-            /**
-             * Api Key
-             * @description Emby API key
-             * @default
-             */
-            api_key: string;
-            /**
-             * Url
-             * @description Emby server URL
-             * @default http://localhost:8096
-             */
-            url: string;
-        };
         /** EventResponse */
         EventResponse: {
             /** Events */
@@ -1660,85 +1599,6 @@ export interface components {
             upscaled?: components["schemas"]["CustomRank"];
             scene?: components["schemas"]["CustomRank"];
             uncensored?: components["schemas"]["CustomRank"];
-        };
-        /** FilesystemModel */
-        FilesystemModel: {
-            /**
-             * Mount Path
-             * Format: path
-             * @description Path where Riven will mount the virtual filesystem
-             * @default /path/to/riven/mount
-             */
-            mount_path: string;
-            /**
-             * Library Profiles
-             * @description Library profiles for organizing media into different libraries based on metadata. An example profile is provided (disabled by default) - enable them or create your own. Each profile filters media by metadata (genres, ratings, etc.) and creates VFS paths. Media appears in all matching profile paths. Use '!' prefix in filter lists to exclude values (e.g., genres: ['action', '!horror'] = action movies but not horror).
-             */
-            library_profiles?: {
-                [key: string]: components["schemas"]["LibraryProfile"];
-            };
-            /**
-             * Cache Dir
-             * Format: path
-             * @description Directory for caching downloaded chunks
-             * @default /dev/shm/riven-cache
-             */
-            cache_dir: string;
-            /**
-             * Cache Max Size Mb
-             * @description Maximum cache size in MB (10 GiB default)
-             * @default 10240
-             */
-            cache_max_size_mb: number;
-            /**
-             * Cache Ttl Seconds
-             * @description Cache time-to-live in seconds (2 hours default)
-             * @default 7200
-             */
-            cache_ttl_seconds: number;
-            /**
-             * Cache Eviction
-             * @description Cache eviction policy (LRU or TTL)
-             * @default LRU
-             * @enum {string}
-             */
-            cache_eviction: "LRU" | "TTL";
-            /**
-             * Cache Metrics
-             * @description Enable cache metrics logging
-             * @default true
-             */
-            cache_metrics: boolean;
-            /**
-             * Movie Dir Template
-             * @description Template for movie directory names. Available variables: title, year, tmdb_id, imdb_id, resolution, codec, hdr, audio, quality, is_remux, is_proper, is_repack, is_extended, is_directors_cut, container. Example: '{title} ({year})' or '{title} ({year}) [{resolution}]'
-             * @default {title} ({year}) {{tmdb-{tmdb_id}}}
-             */
-            movie_dir_template: string;
-            /**
-             * Movie File Template
-             * @description Template for movie file names (without extension). Available variables: title, year, tmdb_id, imdb_id, resolution, codec, hdr, audio, quality, remux, proper, repack, extended, directors_cut, edition (string flags, empty if false). Example: '{title} ({year})' or '{title} ({year}) {edition} [{resolution}] {remux}'
-             * @default {title} ({year})
-             */
-            movie_file_template: string;
-            /**
-             * Show Dir Template
-             * @description Template for show directory names. Available variables: title, year, tvdb_id, imdb_id. Example: '{title} ({year})' or '{title} ({year}) {{tvdb-{tvdb_id}}}'
-             * @default {title} ({year}) {{tvdb-{tvdb_id}}}
-             */
-            show_dir_template: string;
-            /**
-             * Season Dir Template
-             * @description Template for season directory names. Available variables: season (number), show (parent show data with [title], [year], [tvdb_id], [imdb_id]). Example: 'Season {season:02d}' or 'S{season:02d}' or '{show[title]} - Season {season}'
-             * @default Season {season:02d}
-             */
-            season_dir_template: string;
-            /**
-             * Episode File Template
-             * @description Template for episode file names (without extension). Available variables: title, season, episode, show (parent show data with [title], [year], [tvdb_id], [imdb_id]), resolution, codec, hdr, audio, quality, remux, proper, repack, extended, directors_cut, edition. Example: '{show[title]} - s{season:02d}e{episode:02d}' or 'S{season:02d}E{episode:02d} - {title}'. Multi-episode files automatically use range format (e.g., e01-05) based on episode number formatting.
-             * @default {show[title]} - s{season:02d}e{episode:02d}
-             */
-            episode_file_template: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1863,27 +1723,6 @@ export interface components {
              */
             ratelimit: boolean;
         };
-        /** JellyfinLibraryModel */
-        JellyfinLibraryModel: {
-            /**
-             * Enabled
-             * @description Enable Jellyfin library updates
-             * @default false
-             */
-            enabled: boolean;
-            /**
-             * Api Key
-             * @description Jellyfin API key
-             * @default
-             */
-            api_key: string;
-            /**
-             * Url
-             * @description Jellyfin server URL
-             * @default http://localhost:8096
-             */
-            url: string;
-        };
         /**
          * LanguagesConfig
          * @description Configuration for which languages are enabled.
@@ -1994,6 +1833,78 @@ export interface components {
              * @description Content ratings to include/exclude. Prefix with '!' to exclude. Examples: ['PG', 'PG-13'], ['PG', '!R']. Common ratings: G, PG, PG-13, R, NC-17, TV-Y, TV-PG, TV-14, TV-MA. None/omit = no rating filter
              */
             content_ratings?: string[] | null;
+        };
+        /** LibrarySettingsModel */
+        LibrarySettingsModel: {
+            /**
+             * Library Profiles
+             * @description Library profiles for organizing media by metadata (optional extra logical paths). An example profile is provided (disabled by default). Use '!' prefix in filter lists to exclude values (e.g., genres: ['action', '!horror']).
+             */
+            library_profiles?: {
+                [key: string]: components["schemas"]["LibraryProfile"];
+            };
+            /**
+             * Cache Dir
+             * Format: path
+             * @description Directory for caching downloaded chunks
+             * @default /dev/shm/riven-cache
+             */
+            cache_dir: string;
+            /**
+             * Cache Max Size Mb
+             * @description Maximum cache size in MB (10 GiB default)
+             * @default 10240
+             */
+            cache_max_size_mb: number;
+            /**
+             * Cache Ttl Seconds
+             * @description Cache time-to-live in seconds (2 hours default)
+             * @default 7200
+             */
+            cache_ttl_seconds: number;
+            /**
+             * Cache Eviction
+             * @description Cache eviction policy (LRU or TTL)
+             * @default LRU
+             * @enum {string}
+             */
+            cache_eviction: "LRU" | "TTL";
+            /**
+             * Cache Metrics
+             * @description Enable cache metrics logging
+             * @default true
+             */
+            cache_metrics: boolean;
+            /**
+             * Movie Dir Template
+             * @description Template for movie directory names. Available variables: title, year, tmdb_id, imdb_id, resolution, codec, hdr, audio, quality, is_remux, is_proper, is_repack, is_extended, is_directors_cut, container. Example: '{title} ({year})' or '{title} ({year}) [{resolution}]'
+             * @default {title} ({year}) {{tmdb-{tmdb_id}}}
+             */
+            movie_dir_template: string;
+            /**
+             * Movie File Template
+             * @description Template for movie file names (without extension). Available variables: title, year, tmdb_id, imdb_id, resolution, codec, hdr, audio, quality, remux, proper, repack, extended, directors_cut, edition (string flags, empty if false). Example: '{title} ({year})' or '{title} ({year}) {edition} [{resolution}] {remux}'
+             * @default {title} ({year})
+             */
+            movie_file_template: string;
+            /**
+             * Show Dir Template
+             * @description Template for show directory names. Available variables: title, year, tvdb_id, imdb_id. Example: '{title} ({year})' or '{title} ({year}) {{tvdb-{tvdb_id}}}'
+             * @default {title} ({year}) {{tvdb-{tvdb_id}}}
+             */
+            show_dir_template: string;
+            /**
+             * Season Dir Template
+             * @description Template for season directory names. Available variables: season (number), show (parent show data with [title], [year], [tvdb_id], [imdb_id]). Example: 'Season {season:02d}' or 'S{season:02d}' or '{show[title]} - Season {season}'
+             * @default Season {season:02d}
+             */
+            season_dir_template: string;
+            /**
+             * Episode File Template
+             * @description Template for episode file names (without extension). Available variables: title, season, episode, show (parent show data with [title], [year], [tvdb_id], [imdb_id]), resolution, codec, hdr, audio, quality, remux, proper, repack, extended, directors_cut, edition. Example: '{show[title]} - s{season:02d}e{episode:02d}' or 'S{season:02d}E{episode:02d} - {title}'. Multi-episode files automatically use range format (e.g., e01-05) based on episode number formatting.
+             * @default {show[title]} - s{season:02d}e{episode:02d}
+             */
+            episode_file_template: string;
         };
         /** ListrrModel */
         ListrrModel: {
@@ -2235,13 +2146,6 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** MountResponse */
-        MountResponse: {
-            /** Files */
-            files: {
-                [key: string]: string;
-            };
-        };
         /** NotificationsModel */
         NotificationsModel: {
             /**
@@ -2438,11 +2342,14 @@ export interface components {
              */
             ids: number[];
         };
-        /** PlexLibraryModel */
+        /**
+         * PlexLibraryModel
+         * @description Plex server API (watchlist RSS, metadata helpers). Library path scanning was removed.
+         */
         PlexLibraryModel: {
             /**
              * Enabled
-             * @description Enable Plex library updates
+             * @description Enable Plex API integration
              * @default false
              */
             enabled: boolean;
@@ -2879,6 +2786,10 @@ export interface components {
             item_id: number;
             /** Media Type */
             media_type?: ("movie" | "tv") | null;
+            /** Requested Season */
+            requested_season?: number | null;
+            /** Requested Episode */
+            requested_episode?: number | null;
             /** Tmdb Id */
             tmdb_id?: string | null;
             /** Tvdb Id */
@@ -3285,28 +3196,6 @@ export interface components {
             telecine?: components["schemas"]["CustomRank"];
             telesync?: components["schemas"]["CustomRank"];
         };
-        /** UpdatersModel */
-        UpdatersModel: {
-            /**
-             * Updater Interval
-             * @description Interval in seconds between library updates
-             * @default 120
-             */
-            updater_interval: number;
-            /**
-             * Library Path
-             * Format: path
-             * @description Path to which your media library mount point
-             * @default /path/to/library/mount
-             */
-            library_path: string;
-            /** @description Plex library configuration */
-            plex?: components["schemas"]["PlexLibraryModel"];
-            /** @description Jellyfin library configuration */
-            jellyfin?: components["schemas"]["JellyfinLibraryModel"];
-            /** @description Emby library configuration */
-            emby?: components["schemas"]["EmbyLibraryModel"];
-        };
         /** UploadLogsResponse */
         UploadLogsResponse: {
             /** Success */
@@ -3317,18 +3206,6 @@ export interface components {
              * @description URL to the uploaded log file. 50M Filesize limit. 180 day retention.
              */
             url: string;
-        };
-        /** VFSStatsResponse */
-        VFSStatsResponse: {
-            /**
-             * Stats
-             * @description VFS statistics
-             */
-            stats: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
         };
         /** ValidationError */
         ValidationError: {
@@ -3922,44 +3799,6 @@ export interface operations {
             };
         };
     };
-    mount: {
-        parameters: {
-            query?: {
-                api_key?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MountResponse"];
-                };
-            };
-            /** @description Not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     upload_logs: {
         parameters: {
             query?: {
@@ -4016,44 +3855,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CalendarResponse"];
-                };
-            };
-            /** @description Not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_vfs_stats: {
-        parameters: {
-            query?: {
-                api_key?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VFSStatsResponse"];
                 };
             };
             /** @description Not found */
@@ -5119,7 +4920,7 @@ export interface operations {
     get_settings_schema_for_keys: {
         parameters: {
             query: {
-                /** @description Comma-separated list of top-level keys to get schema for (e.g., 'version,api_key,updaters') */
+                /** @description Comma-separated list of top-level keys to get schema for (e.g., 'version,api_key,library,plex') */
                 keys: string;
                 /** @description Title of the schema */
                 title?: string;
